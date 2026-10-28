@@ -3,7 +3,7 @@
 <meta name="theme-color" content="#120d1c"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Ajani">
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
-<title>Ajani – Deck Builder & Playtester</title><link rel="stylesheet" href="style.css?v=1"></head>
+<title>Ajani – Deck Builder & Playtester</title><link rel="stylesheet" href="style.css?v=3"></head>
 <body>
 <canvas id="bg"></canvas>
 <header>
@@ -39,7 +39,7 @@
   <form id="cForm" class="search"><input id="cQ" placeholder="Ask Ajani for cards, synergy, combos…"><button class="ib send"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2-7z"/></svg></button></form>
  </section>
  <section class="view" id="v-play">
-  <div class="tag">Simplified playtest – not a full rules engine</div>
+  <div class="tag">Playtest vs AI – core rules automated; unusual card text resolved manually (ⓘ)</div>
   <div id="table"></div>
  </section>
  <section class="view" id="v-stats">
@@ -49,7 +49,8 @@
  </section>
  <section class="view" id="v-set"><div id="settings"></div></section>
 </main>
-<nav id="tabs">
+<button id="fab" aria-label="Menu"><svg viewBox="0 0 40 40"><rect class="f1" x="9" y="9" width="14" height="20" rx="2"/><rect class="f2" x="13" y="8" width="14" height="20" rx="2"/><rect class="f3" x="17" y="9" width="14" height="20" rx="2"/></svg><span id="fabL">Build</span></button><div id="dealer"></div>
+<nav id="tabs" hidden>
  <button data-v="build"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="11" height="15" rx="2"/><path d="M9 21h9a2 2 0 0 0 2-2V7"/></svg><span>Build</span></button>
  <button data-v="ajani"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Ajani</span></button>
  <button data-v="play"><svg viewBox="0 0 24 24"><path d="M14 4l6 6-9 9-4 1 1-4zM5 5l5 5"/></svg><span>Play</span></button>
@@ -59,5 +60,5 @@
 <div id="modal" class="modal"><div class="mbox"><div id="mBody"></div><div class="mact"><button id="mCancel" class="ghost">Close</button><button id="mOk">OK</button></div></div></div>
 <div id="zoom" class="zoom"></div><div id="toast"></div>
 <input type="file" id="file" hidden>
-<script src="app.js?v=1"></script>
+<script src="app.js?v=3"></script><script src="mtg.js?v=3"></script>
 </body></html>

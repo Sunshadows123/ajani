@@ -48,7 +48,7 @@ function modal(html,ok){$("#mBody").innerHTML=html;$("#modal").classList.add("on
  return new Promise(res=>{$("#mOk").onclick=()=>{const v=ok?ok():true;$("#modal").classList.remove("on");res(v)};$("#mCancel").onclick=()=>{$("#modal").classList.remove("on");res(null)}})}
 function banner(t){const b=document.createElement("div");b.className="banner";b.textContent=t;document.body.appendChild(b);setTimeout(()=>b.remove(),1700)}
 function zoom(c){if(!c)return;const z=$("#zoom");z.innerHTML=`<div class="in">${c.img?`<img src="${esc(c.img)}">`:cardFace(c)}<p><b>${esc(c.name)}</b> — ${esc(c.type)}\n${esc(c.text||"")}</p></div>`;z.classList.add("on");z.onclick=()=>z.classList.remove("on");sfx("click")}
-function cardFace(c){return `<div class="fake"><b>${esc(c.name)}</b><small>${esc(c.type||"")}</small><span class="pt">${G==="ygo"||c.atk!=null?`${c.atk??"?"}/${c.def??"?"}`:c.pow!=null?`${c.pow}/${c.tou}`:esc(c.cmc??"")}</span></div>`}
+function cardFace(c){return `<div class="fake"><b>${esc(c.name)}</b><small>${esc(c.type||"")}</small><span class="pt">${G==="ygo"||c.atk!=null?`${c.atk??"?"}/${c.def??"?"}`:c.pow!=null?`${c.pow}/${c.tou}`:typeof c.cmc==="number"&&!/Land/.test(c.type||"")?c.cmc:""}</span></div>`}
 function cardEl(c,o={}){const d=document.createElement("div");d.className="card"+(o.cls?" "+o.cls:"");if(o.delay!=null)d.style.animationDelay=o.delay+"s";
  d.innerHTML=(o.back?'<div class="back"></div>':c.img?`<img loading="lazy" src="${esc(c.img)}" alt="${esc(c.name)}">`:cardFace(c))+'<div class="glare"></div>'+(o.badge?`<span class="bad">${esc(o.badge)}</span>`:"");
  if(!o.noTilt&&S.anim!=="off"){d.onpointermove=e=>{if(e.pointerType==="touch")return;const r=d.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;d.style.transform=`rotateY(${(x-.5)*24}deg) rotateX(${(.5-y)*24}deg) scale(1.06)`;d.style.setProperty("--gx",x*100+"%");d.style.setProperty("--gy",y*100+"%")};d.onpointerleave=()=>d.style.transform=""}
@@ -66,12 +66,21 @@ function setGame(g){G=g;$("#gameSw").classList.toggle("ygo",g==="ygo");$$("#game
  $("#sQ").placeholder=g==="mtg"?"Search Scryfall… e.g. t:legendary c:g lifegain":"Search YGOPRODeck… e.g. Blue-Eyes";
  $("#sHint").textContent=g==="mtg"?"Drag cards onto your deck or tap +. Set a commander first; search auto-filters to its colour identity.":"Drag cards onto your deck or tap +. Fusion/Synchro/Xyz/Link go to the Extra Deck automatically.";
  $("#results").innerHTML="";game=null;renderDeckSel();renderDeck();resetChat();if(V==="play")startGame();if(V==="stats")$("#simOut").innerHTML=""}
-function setView(v){V=v;$$(".view").forEach(x=>x.classList.toggle("on",x.id==="v-"+v));$$("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));sfx("click");
+const TRANS={build:[[{opacity:0,transform:"translateX(60%) rotateY(-70deg) scale(.7)"},{opacity:1,transform:"none"}],"slide-through-deck"],
+ ajani:[[{opacity:0,transform:"scale(.1) rotate(-540deg)",filter:"blur(12px)"},{opacity:1,transform:"none",filter:"blur(0)"}],"portal vortex"],
+ play:[[{opacity:0,clipPath:"polygon(50% 50%,50% 50%,50% 50%,50% 50%,50% 50%,50% 50%)",transform:"scale(1.15)"},{opacity:1,clipPath:"polygon(-60% -60%,60% -80%,160% -60%,180% 60%,40% 180%,-80% 120%)",transform:"none"}],"shatter"],
+ stats:[[{opacity:0,transform:"perspective(900px) rotateX(-95deg)",transformOrigin:"top"},{opacity:1,transform:"perspective(900px) rotateX(0)",transformOrigin:"top"}],"page turn"],
+ set:[[{opacity:0,transform:"rotate(200deg) scale(.4)",filter:"hue-rotate(180deg) saturate(3)"},{opacity:1,transform:"none",filter:"none"}],"mana swirl"]};
+const OUT={build:{transform:"translateX(-60%) rotateY(70deg) scale(.7)"},ajani:{transform:"scale(2.5) rotate(180deg)",filter:"blur(10px)"},play:{transform:"scale(1.3) rotate(8deg)",filter:"brightness(3)"},stats:{transform:"perspective(900px) rotateX(95deg)",transformOrigin:"bottom"},set:{transform:"rotate(-200deg) scale(.3)"}};
+const motionOK=()=>S.anim!=="off"&&(S.forceMotion||!matchMedia("(prefers-reduced-motion:reduce)").matches);
+function setView(v){const prev=$(".view.on"),next=$("#v-"+v);if(motionOK()&&prev&&prev!==next&&next.animate){const d=S.anim==="subtle"?350:650;
+  prev.animate([{opacity:1,transform:"none"},{opacity:0,...OUT[v]}],{duration:d*.7,easing:"ease-in"});next.animate(TRANS[v][0],{duration:d,easing:"cubic-bezier(.2,.9,.3,1.1)"})}
+ V=v;$("#fabL").textContent={build:"Build",ajani:"Ajani",play:"Play",stats:"Stats",set:"Settings"}[v];$$(".view").forEach(x=>x.classList.toggle("on",x.id==="v-"+v));$$("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));sfx("click");
  if(v==="play"&&!game)startGame();if(v==="set")renderSettings()}
 /* ---------- card data ---------- */
 const SF="https://api.scryfall.com",YG="https://db.ygoprodeck.com/api/v7/cardinfo.php";
 function nMtg(c){const f=c.card_faces&&c.card_faces[0];const iu=c.image_uris||(f&&f.image_uris)||{};
- return{id:c.id,name:c.name,img:iu.normal||iu.small||"",type:c.type_line||(f&&f.type_line)||"",cmc:c.cmc||0,ci:c.color_identity||[],legal:(c.legalities||{}).commander,
+ return{id:c.id,name:c.name,img:iu.normal||iu.small||"",type:c.type_line||(f&&f.type_line)||"",cmc:c.cmc||0,ci:c.color_identity||[],legal:(c.legalities||{}).commander,mc:c.mana_cost??(f&&f.mana_cost)??"",prod:c.produced_mana||[],
   pow:c.power??(f&&f.power),tou:c.toughness??(f&&f.toughness),text:c.oracle_text||(f&&f.oracle_text)||"",kw:c.keywords||[]}}
 const EXTRA=/fusion|synchro|xyz|link/;
 function nYgo(c){const ban=(c.banlist_info||{}).ban_tcg;return{id:c.id,name:c.name,img:(c.card_images&&c.card_images[0].image_url_small)||"",type:c.type,ft:c.frameType||"",
@@ -243,7 +252,7 @@ let game=null;const num=v=>{const n=parseInt(v);return isNaN(n)?1:n};
 const isLand=c=>/Land/.test(c.type),isCre=c=>/Creature/.test(c.type),isRock=c=>/Artifact/.test(c.type)&&/\{T\}: Add/.test(c.text||"");
 const isMon=c=>c.atk!=null&&!/Spell|Trap/.test(c.type);
 function mkP(cards,cmdr,nm){const lib=shuffle(cards.map(c=>({...c,u:uid()})));return{nm,life:G==="mtg"?40:8000,lib,hand:[],bf:[],gy:[],cmd:cmdr?[{...cmdr,u:uid(),cmdr:1}]:[],tax:0,land:0,ns:0,mull:0}}
-function startGame(){const d=deck();const me=deckCards(d);if(me.length<(G==="mtg"?30:20)){game=null;$("#table").innerHTML=`<div class="pane hero"><span class="ava">${avaHTML()}</span><h3>Build a deck first</h3><p class="hint">Your current deck has ${me.length} cards. Add at least ${G==="mtg"?30:20} cards (or import a list), then come back to test it against ${esc(S.name)}'s AI.</p><button onclick="setView('build')">Go to Build</button></div>`;return}
+function startGame(){const d=deck();const me=deckCards(d);if(G==="mtg"&&me.length>=30){mtgStart();return}if(me.length<(G==="mtg"?30:20)){game=null;$("#table").innerHTML=`<div class="pane hero"><span class="ava">${avaHTML()}</span><h3>Build a deck first</h3><p class="hint">Your current deck has ${me.length} cards. Add at least ${G==="mtg"?30:20} cards (or import a list), then come back to test it against ${esc(S.name)}'s AI.</p><button onclick="setView('build')">Go to Build</button></div>`;return}
  const o=oppDeck();game={turn:0,act:"me",P:{me:mkP(me,G==="mtg"?d.cmdr:null,"You"),opp:mkP(o.cards,o.cmdr,o.name)},log:[],sel:null,over:false,phase:"mull"};
  for(const k of["me","opp"])for(let i=0;i<(G==="mtg"?7:5);i++)game.P[k].hand.push(game.P[k].lib.pop());
  render();shufAnim();banner("Opening hand");logp(`Game start vs ${o.name} (${S.diff} AI). Keep or mulligan?`)}
@@ -314,7 +323,7 @@ function onCard(c,zone,who){if(game.over)return;if(game.phase==="mull"){zoom(c);
     game.sel=game.sel===c?null:c;render();if(game.sel&&!game.P.opp.bf.some(isMon))toast("Tap opponent's LP to attack directly");return}}}
  if(who==="opp"&&zone==="bf"&&G==="ygo"&&game.sel){const a=game.sel;game.sel=null;ygoAttack(a,c,"me");return}
  zoom(c)}
-function render(){if(!game)return;const T=$("#table");const sideH=(who)=>{const P=game.P[who];const zoneH=(z,cls)=>`<div class="zone ${cls||""}" data-z="${who}-${z}"></div>`;
+function render(){if(!game||game.mtg)return;const T=$("#table");const sideH=(who)=>{const P=game.P[who];const zoneH=(z,cls)=>`<div class="zone ${cls||""}" data-z="${who}-${z}"></div>`;
   return `<div class="side ${who}"><div class="hud"><span class="life" id="life-${who}" ${who==="opp"?'data-direct="1"':""}>${P.life}</span><b>${esc(P.nm)}</b>
    <span class="pile" data-z="${who}-lib">${'<div class="back"></div>'.repeat(Math.min(3,P.lib.length))}<span>${P.lib.length}</span></span>
    <small>Hand ${P.hand.length} · GY ${P.gy.length}${G==="mtg"?` · Mana ${avail(P)}`:""}</small></div>
@@ -391,6 +400,28 @@ function renderSettings(){const opp=g=>`<option value="sample">Built-in sample d
 /* ---------- init ---------- */
 $$("#gameSw button").forEach(b=>b.onclick=()=>{setGame(b.dataset.g);sfx("click");$("#views").animate?.([{opacity:.3,transform:"translateX(30px)"},{opacity:1,transform:"none"}],{duration:400*(S.anim==="off"?0:1),easing:"ease-out"})});
 $$("#tabs button").forEach(b=>b.onclick=()=>setView(b.dataset.v));
+/* ---------- card-deal navigation ---------- */
+const NAV=[["build","Forge of Decks","Sorcery — Workshop","Search cards, choose a commander, build and validate your deck.","#f0b43c",'<rect x="20" y="14" width="34" height="46" rx="4"/><rect x="34" y="26" width="34" height="46" rx="4"/><path d="M51 40v18M42 49h18"/>'],
+ ["ajani","Counsel of Ajani","Instant — Advisor","Ask Ajani for card suggestions, synergies and deck checks.","#8b5cf6",'<path d="M14 18h56v34H34l-14 12V52h-6z"/><circle cx="32" cy="35" r="3"/><circle cx="44" cy="35" r="3"/><circle cx="56" cy="35" r="3"/>'],
+ ["play","Duel of Champions","Sorcery — Battle","Playtest your deck on a shared tabletop against the AI.","#f87171",'<path d="M18 66L58 26M58 26l6-12-12 6M66 66L26 26M26 26l-6-12 12 6M14 58l8 8M70 58l-8 8"/>'],
+ ["stats","Scrying Pool","Enchantment — Oracle","Simulate hundreds of goldfish games for curve and speed stats.","#34d399",'<path d="M16 66V44M32 66V28M48 66V38M64 66V18"/><path d="M12 68h60"/>'],
+ ["set","Runes of Shaping","Artifact — Customisation","Themes, animations, playmats, AI model and opponent settings.","#60a5fa",'<circle cx="42" cy="42" r="10"/><path d="M42 14v10M42 60v10M14 42h10M60 42h10M22 22l7 7M55 55l7 7M22 62l7-7M55 29l7-7"/>']];
+function navCard([v,t,ty,tx,col,ic]){return `<div class="ncard" data-v="${v}" style="--nc:${col}"><div class="ninner"><div class="nface"><div class="ntitle">${t}</div><div class="nart"><svg viewBox="0 0 84 84">${ic}</svg></div><div class="ntype">${ty}</div><div class="ntext">${tx}</div></div><div class="nback"></div></div></div>`}
+function openDeal(){const o=$("#dealer");if(o.classList.contains("on")){closeDeal();return}o.innerHTML=`<div class="fan">${NAV.map(navCard).join("")}</div>`;o.classList.add("on");$("#fab").classList.add("open");sfx("shuffle");
+ const cs=[...o.querySelectorAll(".ncard")],n=cs.length,mot=motionOK(),fab=$("#fab").getBoundingClientRect();
+ cs.forEach((c,i)=>{const m=i-(n-1)/2,r=c.getBoundingClientRect();c.style.setProperty("--rot",m*12+"deg");c.style.setProperty("--ty",Math.abs(m)*14+"px");c.classList.toggle("cur",c.dataset.v===V);
+  if(mot&&c.animate)c.animate([{transform:`translate(${fab.left+fab.width/2-r.left-r.width/2}px,${fab.top-r.top}px) rotate(0) scale(.2)`,opacity:0},{opacity:1,offset:.3},{transform:`rotate(${m*12}deg) translateY(${Math.abs(m)*14}px)`}],{duration:520*(S.anim==="subtle"?.5:1),delay:i*85,easing:"cubic-bezier(.2,.9,.3,1.2)",fill:"backwards"});
+  setTimeout(()=>sfx("draw"),i*85);
+  c.onpointermove=e=>{if(e.pointerType==="touch"||!mot)return;const b=c.getBoundingClientRect(),x=(e.clientX-b.left)/b.width-.5,y=(e.clientY-b.top)/b.height-.5;c.querySelector(".ninner").style.transform=`rotateY(${x*30}deg) rotateX(${-y*30}deg) translateY(-24px) scale(1.08)`};
+  c.onpointerleave=()=>c.querySelector(".ninner").style.transform="";
+  c.onclick=e=>{e.stopPropagation();pick(c,cs)}})}
+function pick(c,cs){const v=c.dataset.v;sfx("win");if(!motionOK()){closeDeal(true);setView(v);return}
+ const d=S.anim==="subtle"?.5:1;cs.forEach((o,i)=>{if(o!==c)o.animate([{},{transform:`translate(${(i-2)*160}px,${innerHeight}px) rotate(${(i-2)*60}deg)`,opacity:0}],{duration:450*d,easing:"ease-in",fill:"forwards"})});
+ const r=c.getBoundingClientRect();c.style.zIndex=9;c.animate([{transform:getComputedStyle(c).transform},{transform:`translate(${innerWidth/2-r.left-r.width/2}px,${innerHeight/2-r.top-r.height/2}px) rotate(0) scale(1.4)`,offset:.45},{transform:`translate(${innerWidth/2-r.left-r.width/2}px,${innerHeight/2-r.top-r.height/2}px) rotateY(180deg) scale(${Math.max(innerWidth/r.width,innerHeight/r.height)*1.1})`,opacity:.0}],{duration:800*d,easing:"cubic-bezier(.5,0,.3,1)",fill:"forwards"});
+ setTimeout(()=>{setView(v)},450*d);setTimeout(()=>closeDeal(true),800*d)}
+function closeDeal(now){const o=$("#dealer");$("#fab").classList.remove("open");if(now||!motionOK()){o.classList.remove("on");o.innerHTML="";return}
+ o.querySelectorAll(".ncard").forEach((c,i)=>c.animate([{},{transform:"translateY(120vh) rotate(30deg)",opacity:0}],{duration:350,delay:i*40,fill:"forwards"}));setTimeout(()=>{o.classList.remove("on");o.innerHTML=""},560)}
+$("#fab").onclick=openDeal;$("#dealer").onclick=e=>{if(e.target.id==="dealer"||e.target.classList.contains("fan"))closeDeal()};
 applyS();bgResize();requestAnimationFrame(bgLoop);setGame(G);setView("build");
 if(S.apiKey&&S.apiBase)loadAI();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");

@@ -1,4 +1,4 @@
-const C="aj-v1",SHELL=["./","index.html","app.js?v=1","style.css?v=1","manifest.json","icon-180.png","icon-192.png","icon-512.png"];
+const C="aj-v3",SHELL=["./","index.html","app.js?v=3","mtg.js?v=3","style.css?v=3","manifest.json","icon-180.png","icon-192.png","icon-512.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(SHELL)));self.skipWaiting()});
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n.startsWith("aj-")&&n!==C).map(n=>caches.delete(n)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{const u=e.request.url;if(e.request.method!=="GET")return;
